@@ -176,48 +176,6 @@ def gen_image_path(base_path, image_key):
     file = image_key[1]
        
     return f"{base_path}{folder}/{file}.jpg"
-  
- 
-#Subclasses
-
-"""#Model callback subclass
-class PlotterCallback(keras.callbacks.Callback):
-  def __init__(self,**kargs):
-          #super(PlotterCallback,self).__init__(**kargs)
-          self.epoch_accuracy = [] # loss at given epoch
-          self.epoch_loss = [] # accuracy at given epoch
-          self.epoch_val_accuracy = [] # accuracy at given epoch
-          self.epoch_val_loss = [] # accuracy at given epoch
-  
-  # start of training
-  def on_train_begin(self, logs={}):
-    self.lrates = list()
-
-
-  def plotzie(self, accuracy, loss, val_accuracy, val_loss):
-    epochs = range(1, len(accuracy) + 1)
-    plt.plot(epochs, accuracy, "bo", label="Training Accuracy")
-    plt.plot(epochs, val_accuracy, "b", label="Validation Accuracy")
-    plt.title("Training and Validation Accuracy")
-    plt.legend()
-    plt.figure()
-
-    plt.plot(epochs, loss, "bo", label="Training Loss")
-    plt.plot(epochs, val_loss, "b", label="Validation Loss")
-    plt.title("Training and Validation Loss")
-    plt.legend()
-    plt.show()
-
-  def on_epoch_end(self, epoch, logs={}):
-        # things done on end of the epoch
-        # get and print the learning rate
-        print(f" Learning Rate: {float(backend.get_value(self.model.optimizer.lr)): .6f}")
-  
-        self.epoch_accuracy.append(logs.get("accuracy"))
-        self.epoch_loss.append(logs.get("loss"))
-        self.epoch_val_accuracy.append(logs.get("val_accuracy"))
-        self.epoch_val_loss.append(logs.get("val_loss"))
-        self.plotzie(self.epoch_accuracy,self.epoch_loss, self.epoch_val_accuracy, self.epoch_val_loss)"""
 
 #Setup annotation data
 no_star_data_set = []
@@ -292,16 +250,14 @@ patience=5
 
 
 #set callbacks
-#rlrp = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.000001, patience=3, cooldown=2, min_delta=0.0001)
-#pc = PlotterCallback()
+rlrp = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.000001, patience=3, cooldown=2, min_delta=0.0001)
 callbacks = [
-    #keras.callbacks.ModelCheckpoint(
-    #    filepath=f"InceptionResNet-{C_Width}x{C_Height}-uuid-{uuid.uuid4()}.keras",
-    #    save_best_only=False,
-    #    monitor="val_loss"
-    #),
-    #pc,
-    #rlrp,
+    keras.callbacks.ModelCheckpoint(
+        filepath=f"InceptionResNet-{C_Width}x{C_Height}-uuid-{uuid.uuid4()}.keras",
+        save_best_only=False,
+        monitor="val_loss"
+    ),
+    rlrp,
     keras.callbacks.EarlyStopping(monitor="val_loss", patience=5)
 ]
 
@@ -365,12 +321,7 @@ class HyperTuner(kt.HyperModel):
       #residual for gradient feedback
       #residual = x
       
-      #x = layers.Conv2D(size, (1,1), activation='relu')(x)
-      
       #Main two stack pyramid layer combo
-      #x = layers.Conv2D(size, 3, padding="same", use_bias=False)(x)
-      #x = layers.BatchNormalization()(x)
-      #x = layers.Activation("relu")(x)
       x = layers.Conv2D(size, kernel_size, padding="same", use_bias=False)(x)
       x = layers.BatchNormalization()(x)
       x = layers.Activation("relu")(x)
@@ -382,19 +333,8 @@ class HyperTuner(kt.HyperModel):
       #x = layers.add([x, residual])
       #x = layers.ReLU()(x)
 
-
-    #Over training control
-    #x = layers.BatchNormalization()(x)
-    #x = layers.Dropout(Dropout)(x)
-
     x = layers.GlobalAveragePooling2D()(x)
     x = layers.Flatten()(x)
-    #x = layers.Dense(Dense_Size, activation="relu")(x)
-    #x = layers.Dropout(Dropout)(x)
-    """x = layers.AveragePooling2D(pool_size=(2, 2))(x)
-    x = layers.Flatten(name="flatten")(x)
-    x = layers.Dense(128, activation="relu")(x)
-    x = layers.Dropout(0.5)(x)"""
 
     #Sigmoid output
     outputs = layers.Dense(2, activation="softmax")(x)
@@ -407,6 +347,7 @@ class HyperTuner(kt.HyperModel):
         metrics=["accuracy"]
     )
     return model
+    #Model Summary for debug
     #print(model.summary())
 
 hypermodel = HyperTuner(num_classes=2)
